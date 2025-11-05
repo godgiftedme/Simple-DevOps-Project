@@ -1,0 +1,83 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+from webdriver_manager.chrome import ChromeDriverManager
+import time
+import os
+
+# ---------- CONFIG ----------
+URL = "https://gbm.qlikcloud.com/sense/app/..."  # <-- your Qlik dashboard URL
+DOWNLOAD_DIR = r"C:\Users\<yourname>\Downloads\QlikData"  # <-- change this path
+CHROME_PROFILE_PATH = r"C:\Users\<yourname>\AppData\Local\Google\Chrome\User Data\Default"
+TECH_LEVEL5_FILTERS = ["IWPB Technology", "UK Technology"]
+
+# ---------- SETUP CHROME ----------
+chrome_options = Options()
+chrome_options.add_argument(f"--user-data-dir={os.path.dirname(CHROME_PROFILE_PATH)}")
+chrome_options.add_argument(f"--profile-directory={os.path.basename(CHROME_PROFILE_PATH)}")
+chrome_options.add_argument("--start-maximized")
+
+prefs = {
+    "download.default_directory": DOWNLOAD_DIR,
+    "download.prompt_for_download": False,
+    "safebrowsing.enabled": True
+}
+chrome_options.add_experimental_option("prefs", prefs)
+
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+wait = WebDriverWait(driver, 30)
+
+# ---------- OPEN PAGE ----------
+driver.get(URL)
+print("✅ Qlik page opened successfully with existing Chrome profile")
+
+# ---------- APPLY FILTERS ----------
+for filter_value in TECH_LEVEL5_FILTERS:
+    try:
+        search_box = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[aria-label='Search in listbox']")))
+        search_box.clear()
+        search_box.send_keys(filter_value)
+        time.sleep(1)
+        value_el = wait.until(EC.element_to_be_clickable((By.XPATH, f"//span[text()='{filter_value}']")))
+        value_el.click()
+        print(f"✅ Selected filter: {filter_value}")
+        time.sleep(2)
+    except Exception as e:
+        print(f"⚠️ Could not select filter {filter_value}: {e}")
+
+# ---------- OPEN 3 DOTS MENU ----------
+try:
+    three_dots = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "button[aria-label='More']")))
+    ActionChains(driver).move_to_element(three_dots).perform()
+    time.sleep(1)
+    three_dots.click()
+    print("✅ Opened 3 dots menu")
+except Exception as e:
+    print(f"⚠️ Error clicking 3 dots: {e}")
+
+# ---------- DOWNLOAD AS → DATA ----------
+try:
+    download_as = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Download as')]")))
+    download_as.click()
+    print("✅ Clicked 'Download as'")
+    
+    data_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Data')]")))
+    data_option.click()
+    print("✅ Clicked 'Data' option")
+    
+    export_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Export')]")))
+    export_button.click()
+    print("✅ Clicked 'Export'")
+except Exception as e:
+    print(f"⚠️ Error during download sequence: {e}")
+
+# ---------- WAIT FOR DOWNLOAD ----------
+print("⏳ Waiting for file to download...")
+time.sleep(15)
+
+driver.quit()
+print(f"✅ Download completed! Check folder: {DOWNLOAD_DIR}")
