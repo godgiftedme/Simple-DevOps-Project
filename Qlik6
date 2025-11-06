@@ -1,0 +1,112 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+import time
+
+# -----------------------------
+# ✅ CONFIG
+# -----------------------------
+CHROMEDRIVER_PATH = r"C:\Users\45407114\Documents\Selenium\SeleniumDrivers\chromedriver.exe"
+
+DOWNLOAD_DIR = r"C:\Users\45407114\Documents\Selenium\Download"
+
+FILTERED_URL = "https://gbm-qs.uk.hsbc/sense/app/5d4a1a22-4be8-40cb-add5-b21d8090c035/sheet/387b8101-c66f-427d-962c-aebef7f5d8d4/state/analysis"
+
+# -----------------------------
+# ✅ BROWSER SETUP
+# -----------------------------
+chrome_opts = Options()
+chrome_opts.add_argument("--start-maximized")
+chrome_opts.add_experimental_option("prefs", {
+    "download.default_directory": DOWNLOAD_DIR,
+    "download.prompt_for_download": False,
+    "download.directory_upgrade": True,
+    "safebrowsing.enabled": True
+})
+
+driver = webdriver.Chrome(service=Service(CHROMEDRIVER_PATH), options=chrome_opts)
+wait = WebDriverWait(driver, 20)
+
+driver.get(FILTERED_URL)
+print("✅ Page opened.")
+time.sleep(4)
+
+# -----------------------------
+# ✅ STEP 1 — Hover to reveal the 3 dots
+# -----------------------------
+try:
+    print("Hovering over table area...")
+    table_area = wait.until(EC.presence_of_element_located(
+        (By.CSS_SELECTOR, "div.qv-grid-cell")
+    ))
+    ActionChains(driver).move_to_element(table_area).perform()
+    time.sleep(2)
+except Exception as e:
+    print("❌ Could not hover:", e)
+
+# -----------------------------
+# ✅ STEP 2 — Click the correct 3 dots
+# -----------------------------
+try:
+    print("Clicking the correct 3 dots...")
+    three_dots = wait.until(EC.element_to_be_clickable(
+        (By.CSS_SELECTOR, "button.lui-icon--more")
+    ))
+    three_dots.click()
+    print("✅ 3 dots opened.")
+except Exception as e:
+    print("❌ Error clicking 3 dots:", e)
+
+time.sleep(2)
+
+# -----------------------------
+# ✅ STEP 3 — Click 'Download as'
+# -----------------------------
+try:
+    print("Clicking 'Download as'...")
+    download_as = wait.until(EC.element_to_be_clickable(
+        (By.XPATH, "//span[contains(text(),'Download as')]")
+    ))
+    download_as.click()
+    print("✅ Download as clicked.")
+except Exception as e:
+    print("❌ Error:", e)
+
+time.sleep(2)
+
+# -----------------------------
+# ✅ STEP 4 — Click 'Data'
+# -----------------------------
+try:
+    print("Clicking 'Data'...")
+    data_btn = wait.until(EC.element_to_be_clickable(
+        (By.XPATH, "//span[contains(text(), 'Data')]")
+    ))
+    data_btn.click()
+    print("✅ Data clicked.")
+except Exception as e:
+    print("❌ Error:", e)
+
+time.sleep(2)
+
+# -----------------------------
+# ✅ STEP 5 — Click 'Export'
+# -----------------------------
+try:
+    print("Clicking 'Export'...")
+    export_btn = wait.until(EC.element_to_be_clickable(
+        (By.XPATH, "//span[contains(text(),'Export')]")
+    ))
+    export_btn.click()
+    print("✅ Export clicked. Waiting for download...")
+except Exception as e:
+    print("❌ Error in export:", e)
+
+time.sleep(5)
+
+print(f"✅ Done. File should be in: {DOWNLOAD_DIR}")
+driver.quit()
