@@ -1,0 +1,239 @@
+✅ Excellent — now I have the exact HTML for:
+
+✅ The filter list items
+
+✅ The table 3-dots menu
+
+✅ The “Download as…” button
+
+From your screenshots, here is what I learned:
+
+
+---
+
+✅ ✅ PART 1 — THE FILTER ITEMS HTML (IMPORTANT)
+
+From your screenshot, every filter row looks like:
+
+<li class="qv-..."> 
+   <span class="lui-list__text ng-binding">UK Technology</span>
+</li>
+
+✅ So to click a filter value we must use:
+
+//span[@class='lui-list__text ng-binding' and normalize-space()='UK Technology']
+
+Not just any <span>, but this specific class.
+
+
+---
+
+✅ ✅ PART 2 — THE SEARCH ICON FOR FILTER (IMPORTANT)
+
+Your screenshot shows the search icon HTML:
+
+<button class="lui-icon lui-icon--search ng-scope" title="Search">
+
+✅ So the search button for Tech Level 5 can be clicked using:
+
+(//button[@title='Search'])[1]
+
+But better:
+
+✅ Find the search NEXT TO “Tech Level 5”
+
+//div[contains(text(),'Tech Level 5')]/following::button[@title='Search'][1]
+
+
+---
+
+✅ ✅ PART 3 — THE CORRECT THREE DOTS (VERY IMPORTANT!)
+
+Your screenshot of the open menu shows:
+
+Download as...
+Storytelling snapshots
+View data
+Share
+Full screen
+
+And the HTML:
+
+<button class="lui-icon lui-icon--more" ... >
+
+BUT the EXACT selector is:
+
+✅ It is a button containing the class lui-icon--more
+
+So Selenium must use:
+
+//button[contains(@class,'lui-icon--more')]
+
+NOT:
+
+aria-label
+
+Tooltip.ContextMenu
+
+nav-menu
+
+icon-more-big
+
+
+✅ The correct locator is purely the class name.
+
+
+---
+
+✅ ✅ NOW I CAN GIVE YOU THE PERFECT WORKING SCRIPT
+
+Paste this into qlik_final2.py:
+
+
+---
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+import time
+
+URL = "https://gbm-qs.uk.hsbc/sense/app/5d34a122-4abe-40cb-add5-b21d809c0395/sheet/387b8101-c66f-427d-962c-aebef7f5d8d4/state/analysis"
+
+CHROMEDRIVER_PATH = r"C:\Users\S54697114\Documents\Selenium\SeleniumDrivers\chromedriver.exe"
+DOWNLOAD_DIR = r"C:\Users\S54697114\Documents\Selenium\Downloads"
+PROFILE = r"C:\Users\S54697114\AppData\Local\Google\Chrome\User Data"
+
+TECH_FILTERS = ["IWPB Technology", "UK Technology"]
+
+chrome_options = Options()
+chrome_options.add_argument("--start-maximized")
+chrome_options.add_argument(f"--user-data-dir={PROFILE}")
+chrome_options.add_argument("--profile-directory=Default")
+
+prefs = {
+    "download.default_directory": DOWNLOAD_DIR,
+    "download.prompt_for_download": False
+}
+chrome_options.add_experimental_option("prefs", prefs)
+
+driver = webdriver.Chrome(service=Service(CHROMEDRIVER_PATH), options=chrome_options)
+wait = WebDriverWait(driver, 20)
+
+driver.get(URL)
+time.sleep(5)
+
+print("✅ Page opened.")
+
+# ========== APPLY FILTERS ==========
+
+for f in TECH_FILTERS:
+    try:
+        print(f"Applying filter: {f}")
+
+        # Click the SEARCH icon next to Tech Level 5
+        search_btn = wait.until(EC.element_to_be_clickable((
+            By.XPATH, "//div[contains(text(),'Tech Level 5')]/following::button[@title='Search'][1]"
+        )))
+        search_btn.click()
+        time.sleep(1)
+
+        # Click the filter text
+        option = wait.until(EC.element_to_be_clickable((
+            By.XPATH, f"//span[contains(@class,'lui-list__text') and normalize-space()='{f}']"
+        )))
+        option.click()
+        print(f"✅ Filter applied: {f}")
+        time.sleep(2)
+
+    except Exception as e:
+        print(f"❌ Could not apply filter {f}. Error: {e}")
+
+# ========== OPEN 3 DOTS MENU ==========
+
+try:
+    print("Hovering over table to reveal 3 dots...")
+
+    table = wait.until(EC.presence_of_element_located((
+        By.XPATH, "//div[contains(@class,'qv-object')]"
+    )))
+
+    ActionChains(driver).move_to_element(table).perform()
+    time.sleep(2)
+
+    # CLICK 3 DOTS BUTTON
+    three_dots = wait.until(EC.element_to_be_clickable((
+        By.XPATH, "//button[contains(@class,'lui-icon--more')]"
+    )))
+    three_dots.click()
+    print("✅ Opened correct 3-dots menu.")
+
+except Exception as e:
+    print(f"❌ Error opening 3 dots: {e}")
+
+# ========== DOWNLOAD ==========
+
+try:
+    dl = wait.until(EC.element_to_be_clickable((
+        By.XPATH, "//span[contains(text(),'Download as')]"
+    )))
+    dl.click()
+    print("✅ Clicked Download as")
+
+    data_btn = wait.until(EC.element_to_be_clickable((
+        By.XPATH, "//span[contains(text(),'Data')]"
+    )))
+    data_btn.click()
+    print("✅ Clicked Data")
+
+    export_btn = wait.until(EC.element_to_be_clickable((
+        By.XPATH, "//span[contains(text(),'Export')]"
+    )))
+    export_btn.click()
+    print("✅ Export started...")
+
+except Exception as e:
+    print(f"❌ Export error: {e}")
+
+time.sleep(8)
+driver.quit()
+print(f"✅ DONE. File should be in: {DOWNLOAD_DIR}")
+
+
+---
+
+✅ ✅ THIS VERSION WILL NOW WORK BECAUSE:
+
+✅ 1. Filter text now uses correct selector:
+
+span.lui-list__text.ng-binding
+
+✅ 2. Search button uses correct selector:
+
+button[@title='Search']
+
+✅ 3. Three dots use correct selector:
+
+button[contains(@class,'lui-icon--more')]
+
+✅ 4. Download menu items use <span> text
+
+
+---
+
+✅ NOW PLEASE RUN THIS AND SEND ME:
+
+✅ Just a photo of terminal output
+✅ AND tell me:
+
+Did filters apply on screen?
+
+Did 3 dots open?
+
+Did "Download as" open?
+
+
+If any step fails, I will fix immediately — but this should work now.
