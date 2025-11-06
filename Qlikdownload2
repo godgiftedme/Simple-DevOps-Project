@@ -1,0 +1,121 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+import time
+
+# ------------------ CONFIG ------------------
+
+URL = "https://gbm-qs.uk.hsbc/sense/app/5d34a122-4abe-40cb-add5-b21d809c0395/sheet/387b8101-c66f-427d-962c-aebef7f5d8d4/state/analysis"
+
+DOWNLOAD_DIR = r"C:\Users\S54697114\Documents\Selenium\Downloads"
+CHROMEDRIVER_PATH = r"C:\Users\S54697114\Documents\Selenium\SeleniumDrivers\chromedriver.exe"
+CHROME_PROFILE_PATH = r"C:\Users\S54697114\AppData\Local\Google\Chrome\User Data"
+
+TECH_FILTERS = ["IWPB Technology", "UK Technology"]
+
+# ------------------ SETUP CHROME ------------------
+
+chrome_options = Options()
+chrome_options.add_argument("--start-maximized")
+chrome_options.add_argument(f'--user-data-dir={CHROME_PROFILE_PATH}')
+chrome_options.add_argument("--profile-directory=Default")
+
+prefs = {
+    "download.default_directory": DOWNLOAD_DIR,
+    "download.prompt_for_download": False,
+}
+chrome_options.add_experimental_option("prefs", prefs)
+
+service = Service(CHROMEDRIVER_PATH)
+driver = webdriver.Chrome(service=service, options=chrome_options)
+wait = WebDriverWait(driver, 20)
+
+# ------------------ OPEN PAGE ------------------
+
+driver.get(URL)
+time.sleep(5)
+print("✅ Qlik page opened")
+
+# ------------------ APPLY FILTERS ------------------
+
+for f in TECH_FILTERS:
+    try:
+        print(f"Applying filter: {f}")
+
+        # CLICK THE FILTER DROPDOWN (Tech Level 5)
+        dropdown = wait.until(
+            EC.element_to_be_clickable((By.XPATH, "//div[contains(text(),'Tech Level 5')]"))
+        )
+        dropdown.click()
+        time.sleep(1)
+
+        # CLICK THE FILTER VALUE
+        option = wait.until(
+            EC.element_to_be_clickable((By.XPATH, f"//span[normalize-space()='{f}']"))
+        )
+        option.click()
+        print(f"✅ Applied filter: {f}")
+        time.sleep(2)
+
+    except Exception as e:
+        print(f"⚠️ Could not select filter {f}: {e}")
+
+# ------------------ OPEN CORRECT 3-DOTS MENU ------------------
+
+try:
+    print("Hovering to reveal 3-dots...")
+
+    # Hover over the chart/table object
+    hover_target = wait.until(
+        EC.presence_of_element_located(
+            (By.XPATH, "//div[contains(@class,'qv-object')]")
+        )
+    )
+    ActionChains(driver).move_to_element(hover_target).perform()
+    time.sleep(1)
+
+    print("Clicking correct 3 dots...")
+    menu_btn = wait.until(
+        EC.element_to_be_clickable(
+            (By.XPATH, "//button[@aria-label='Tooltip.ContextMenu']")
+        )
+    )
+    menu_btn.click()
+    print("✅ Opened correct 3-dots menu")
+
+except Exception as e:
+    print("⚠️ Error opening 3-dots:", e)
+
+# ------------------ DOWNLOAD AS → DATA ------------------
+
+try:
+    download_as = wait.until(
+        EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Download as')]"))
+    )
+    download_as.click()
+    print("✅ Clicked 'Download as'")
+
+    data_btn = wait.until(
+        EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Data')]"))
+    )
+    data_btn.click()
+    print("✅ Clicked 'Data'")
+
+    export_btn = wait.until(
+        EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Export')]"))
+    )
+    export_btn.click()
+    print("✅ Clicked 'Export'")
+
+except Exception as e:
+    print("⚠️ Download menu error:", e)
+
+print("⏳ Waiting for download...")
+time.sleep(10)
+
+driver.quit()
+print(f"✅ Done! File saved to: {DOWNLOAD_DIR}")
