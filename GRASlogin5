@@ -1,0 +1,54 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+# ✅ UPDATE THESE
+DATASIGHT_URL = "your_filtered_datasight_url_here"
+CHROMEDRIVER_PATH = r"C:\Users\45k9071\Documents\Selenium\SeleniumDrivers\chromedriver.exe"
+
+# ✅ Anti-detection + download-safe chrome
+options = Options()
+options.add_argument("--start-maximized")
+options.add_experimental_option("excludeSwitches", ["enable-automation"])
+options.add_experimental_option("useAutomationExtension", False)
+options.add_argument("--disable-blink-features=AutomationControlled")
+
+service = Service(CHROMEDRIVER_PATH)
+driver = webdriver.Chrome(service=service, options=options)
+
+wait = WebDriverWait(driver, 300)  # ✅ 5 minutes timeout so you can login calmly
+
+print("\n✅ Opening Datasight...\n")
+driver.get(DATASIGHT_URL)
+time.sleep(2)
+
+print("✅ Browser is open.")
+print("👉 Please complete Google login manually (email + SSO/MFA if asked).")
+print("👉 DO NOT close the browser.")
+print("⏳ Waiting for Datasight dashboard to load...\n")
+
+dashboard_loaded = False
+
+# ✅ Keep checking until dashboard appears (SDLC, GRAS, APP Count etc.)
+DASHBOARD_MARKERS = [
+    "SDLC", "GRAS", "APP Count", "Application Data", "L1", "L2", "L3"
+]
+
+try:
+    wait.until(
+        EC.presence_of_element_located(
+            (By.XPATH, " | ".join([f"//*[contains(text(),'{t}')]" for t in DASHBOARD_MARKERS]))
+        )
+    )
+    dashboard_loaded = True
+except:
+    dashboard_loaded = False
+
+if dashboard_loaded:
+    print("✅ STEP 1 SUCCESS — Dashboard loaded. Continuing to Step 2.\n")
+else:
+    print("⚠️ Dashboard not detected, but browser still open. You can continue manually.\n")
