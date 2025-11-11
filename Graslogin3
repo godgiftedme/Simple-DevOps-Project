@@ -1,0 +1,103 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
+import time
+
+# ✅ UPDATE THESE
+DATASIGHT_URL = "your_datasight_url_with_filters"
+USERNAME = "your_email"
+PASSWORD = "your_password"    # in case Google asks one day
+driver_path = r"C:\Users\45k9071\Documents\Selenium\SeleniumDrivers\chromedriver.exe"
+
+opts = Options()
+opts.add_argument("--start-maximized")
+
+# ✅ Anti-detection
+opts.add_experimental_option("excludeSwitches", ["enable-automation"])
+opts.add_experimental_option("useAutomationExtension", False)
+opts.add_argument("--disable-blink-features=AutomationControlled")
+
+service = Service(driver_path)
+driver = webdriver.Chrome(service=service, options=opts)
+
+wait = WebDriverWait(driver, 20)
+
+def switch_to_google_window():
+    """Switch to Google login window if it opens."""
+    for _ in range(30):  # wait max 15 seconds
+        if len(driver.window_handles) > 1:
+            for h in driver.window_handles:
+                driver.switch_to.window(h)
+                if "accounts.google." in driver.current_url:
+                    print("✅ Switched to Google login window")
+                    return True
+        time.sleep(0.5)
+    print("⚠️ Google popup not found")
+    return False
+
+try:
+    driver.get(DATASIGHT_URL)
+    time.sleep(2)
+
+    # ✅ SSO prompt (if appears)
+    try:
+        sso = wait.until(EC.presence_of_element_located((
+            By.XPATH, "//input[@type='email' or contains(@placeholder,'HSBC')]"
+        )))
+        sso.send_keys(USERNAME)
+        sso.send_keys(Keys.ENTER)
+        print("✅ SSO username entered")
+    except:
+        print("No SSO prompt")
+
+    time.sleep(2)
+
+    # ✅ Switch to Google popup
+    switched = switch_to_google_window()
+    if not switched:
+        pass
+
+    # ✅ Try to find email input (BUT you said you enter manually)
+    try:
+        email_input = wait.until(EC.presence_of_element_located((
+            By.XPATH, "//input[@type='email' or @id='identifierId']"
+        )))
+        # Do NOT type since user types manually
+        print("✅ Email field detected (you type manually)")
+    except:
+        pass
+
+    # ✅ Detect automatically if password screen pops up
+    time.sleep(3)
+
+    password_appeared = False
+    try:
+        password_field = driver.find_element(By.XPATH, "//input[@type='password']")
+        password_appeared = True
+    except:
+        password_appeared = False
+
+    if password_appeared:
+        print("✅ Google is asking for password → entering it")
+        password_field.send_keys(PASSWORD)
+        driver.find_element(By.XPATH, "//span[text()='Next']/parent::button").click()
+    else:
+        print("✅ Google did NOT ask for password → continuing")
+
+    # ✅ Switch back to Datasight tab after popup auto-closes
+    time.sleep(3)
+    for h in driver.window_handles:
+        driver.switch_to.window(h)
+        if "datasight" in driver.current_url.lower():
+            print("✅ Returned to Datasight")
+            break
+
+    time.sleep(8)
+    print("✅ STEP 1 COMPLETE — Logged in successfully")
+
+except Exception as e:
+    print("ERROR:", e)
