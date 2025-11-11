@@ -1,0 +1,44 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+# ✅ UPDATE
+DATASIGHT_URL = "your_filtered_url_here"
+driver_path = r"C:\Users\45k9071\Documents\Selenium\SeleniumDrivers\chromedriver.exe"
+
+opts = Options()
+opts.add_argument("--start-maximized")
+
+# ✅ Anti-detection (still required so browser stays open)
+opts.add_experimental_option("excludeSwitches", ["enable-automation"])
+opts.add_experimental_option("useAutomationExtension", False)
+opts.add_argument("--disable-blink-features=AutomationControlled")
+
+service = Service(driver_path)
+driver = webdriver.Chrome(service=service, options=opts)
+
+wait = WebDriverWait(driver, 200)  # ✅ enough time for manual login
+
+print("✅ Opening Datasight URL...")
+driver.get(DATASIGHT_URL)
+time.sleep(3)
+
+print("\n✅ Please complete login manually in the popup window.")
+print("➡️ Type your email")
+print("➡️ If password is required, enter it")
+print("➡️ Approve any SSO or MFA prompts")
+print("➡️ Wait until Datasight dashboard loads\n")
+
+# ✅ Wait until Datasight dashboard main content appears
+try:
+    # This waits for the big left red menu or any stable element on dashboard
+    wait.until(EC.presence_of_element_located((
+        By.XPATH, "//*[contains(text(),'SDLC') or contains(text(),'GRAS') or contains(text(),'APP Count')]"
+    )))
+    print("✅ STEP 1 COMPLETE — Datasight dashboard loaded successfully!")
+except Exception:
+    print("❌ Login did not complete or dashboard did not load.")
