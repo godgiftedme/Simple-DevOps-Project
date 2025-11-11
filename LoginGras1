@@ -1,0 +1,92 @@
+# STEP 1 — LOGIN TO DATASIGHT ONLY
+# Before running: pip install selenium webdriver-manager
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
+from webdriver_manager.chrome import ChromeDriverManager
+import time
+
+DATASIGHT_URL = "https://<YOUR_URL_WITH_FILTERS>"   # paste your filtered Datasight link
+USERNAME = "YOUR_EMAIL@yourcompany.com"             # your SSO/Google email
+PASSWORD = "YOUR_GOOGLE_PASSWORD"                   # your Google password
+
+opts = Options()
+opts.add_argument("--start-maximized")
+
+driver = webdriver.Chrome(ChromeDriverManager().install(), options=opts)
+wait = WebDriverWait(driver, 40)
+
+def switch_to_google_if_present():
+    # If a Google auth tab/window opened, switch to it
+    for handle in driver.window_handles:
+        driver.switch_to.window(handle)
+        if "accounts.google." in driver.current_url:
+            return True
+    return False
+
+try:
+    driver.get(DATASIGHT_URL)
+
+    # --- (A) Small SSO prompt (enter corporate email / SSO ID) ---
+    try:
+        sso_box = wait.until(EC.presence_of_element_located((
+            By.XPATH,
+            "//input[@type='email' or @type='text' or contains(@placeholder,'SSO') or contains(@aria-label,'SSO') or contains(@placeholder,'email')]"
+        )))
+        sso_box.clear()
+        sso_box.send_keys(USERNAME)
+        sso_box.send_keys(Keys.ENTER)
+        print("Entered SSO/email in the small prompt.")
+    except Exception:
+        print("No small SSO prompt appeared — continuing.")
+
+    time.sleep(1)
+
+    # --- (B) Google login flow ---
+    switched = switch_to_google_if_present()
+
+    # Email step (some orgs skip this because it was pre-filled)
+    try:
+        email_input = WebDriverWait(driver, 25).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@type='email' or @id='identifierId']"))
+        )
+        email_input.clear()
+        email_input.send_keys(USERNAME)
+        driver.find_element(By.XPATH, "//span[text()='Next']/parent::button").click()
+        print("Google email submitted.")
+    except Exception:
+        print("Email step not shown (possibly already filled).")
+
+    # Password step
+    try:
+        password_input = WebDriverWait(driver, 25).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@type='password']"))
+        )
+        password_input.clear()
+        password_input.send_keys(PASSWORD)
+        driver.find_element(By.XPATH, "//span[text()='Next']/parent::button").click()
+        print("Google password submitted.")
+    except Exception:
+        print("Password step not shown (maybe SSO handled it).")
+
+    # --- (C) Return to Datasight tab and wait for dashboard ---
+    # If we’re still on Google, hop back to a non-Google tab
+    for handle in driver.window_handles:
+        driver.switch_to.window(handle)
+        if "datasight" in driver.current_url.lower() or "dashboard" in driver.current_url.lower():
+            break
+
+    # Heavy pages need a moment
+    time.sleep(8)
+    print("STEP 1 complete — logged in and dashboard loaded.")
+
+    # Keep the browser open so you can visually confirm
+    # (Close manually; or uncomment driver.quit() below)
+except Exception as e:
+    print("Login step failed:", e)
+
+# driver.quit()  # uncomment to auto-close when you're satisfied
