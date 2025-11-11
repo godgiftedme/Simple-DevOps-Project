@@ -1,0 +1,92 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
+import time
+
+# ✅ UPDATE THESE
+DATASIGHT_URL = "your_filtered_url_here"
+USERNAME = "your_email_here"
+PASSWORD = "your_password_here"
+driver_path = r"C:\Users\45k9071\Documents\Selenium\SeleniumDrivers\chromedriver.exe"
+
+opts = Options()
+opts.add_argument("--start-maximized")
+
+service = Service(driver_path)
+driver = webdriver.Chrome(service=service, options=opts)
+
+wait = WebDriverWait(driver, 40)
+
+def switch_to_google_window():
+    """Waits for a new Google login window to appear and switches to it."""
+    start = time.time()
+    while time.time() - start < 10:  # wait up to 10 seconds
+        if len(driver.window_handles) > 1:
+            for handle in driver.window_handles:
+                driver.switch_to.window(handle)
+                if "accounts.google." in driver.current_url:
+                    print("✅ Switched to Google login window")
+                    return True
+        time.sleep(0.5)
+    print("❌ Could not detect Google login window")
+    return False
+
+try:
+    # ✅ Open the datasight page
+    driver.get(DATASIGHT_URL)
+    time.sleep(2)
+
+    # ✅ Enter SSO if prompt appears
+    try:
+        sso_input = wait.until(EC.presence_of_element_located((
+            By.XPATH, "//input[@type='email' or contains(@placeholder,'HSBC')]"
+        )))
+        sso_input.send_keys(USERNAME)
+        sso_input.send_keys(Keys.ENTER)
+        print("✅ Entered SSO username")
+    except:
+        print("No SSO box")
+
+    time.sleep(2)
+
+    # ✅ Switch to Google login popup
+    switched = switch_to_google_window()
+
+    if not switched:
+        raise Exception("Google login popup not detected.")
+
+    # ✅ Enter EMAIL
+    email_box = wait.until(EC.presence_of_element_located((
+        By.XPATH, "//input[@type='email' or @id='identifierId']"
+    )))
+    email_box.clear()
+    email_box.send_keys(USERNAME)
+    driver.find_element(By.XPATH, "//span[text()='Next']/parent::button").click()
+    print("✅ Email submitted")
+
+    # ✅ Enter PASSWORD
+    password_box = wait.until(EC.presence_of_element_located((
+        By.XPATH, "//input[@type='password']"
+    )))
+    password_box.clear()
+    password_box.send_keys(PASSWORD)
+    driver.find_element(By.XPATH, "//span[text()='Next']/parent::button").click()
+    print("✅ Password submitted")
+
+    # ✅ Return to Datasight
+    for handle in driver.window_handles:
+        driver.switch_to.window(handle)
+        if "datasight" in driver.current_url.lower():
+            break
+
+    print("⏳ Waiting for dashboard to load…")
+    time.sleep(8)
+
+    print("✅ STEP 1 COMPLETE — Logged in successfully")
+
+except Exception as e:
+    print("ERROR:", e)
