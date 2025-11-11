@@ -1,0 +1,146 @@
+✅ We now know the truth:
+If your other script stays open, but every simplified script closes immediately, that means:
+
+✅ Your working script has an infinite loop or long wait
+
+❌ The simplified Step-1 script reaches the end instantly → Selenium closes Chrome
+
+✅ There is NO ChromeDriver / Policy issue
+
+✅ We only need to force the script to stay alive exactly like your working script
+
+So we will now build a bullet-proof Step-1 that CANNOT close.
+
+
+---
+
+✅ ✅ SUPER-SAFE STEP-1 (Browser can NEVER close)
+
+This version cannot exit because it contains a manual block + infinite survival loop.
+
+✅ It opens the Datasight URL
+✅ Lets you login manually
+✅ Keeps Chrome open permanently
+✅ Waits until dashboard loads
+✅ Never reaches end → browser stays open
+✅ Works even if nothing loads
+✅ Works even if popup timing changes
+
+
+---
+
+✅ ✅ COPY–PASTE THIS EXACT VERSION
+
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+import time
+
+# ===== CONFIG =====
+TARGET_URL = "your_datasight_url_here"
+CHROMEDRIVER_PATH = r"C:\Users\45k9071\Documents\Selenium\SeleniumDrivers\chromedriver.exe"
+
+# ===== CHROME OPTIONS =====
+chrome_options = Options()
+chrome_options.add_argument("--start-maximized")
+
+# Anti-detection flags (same as your working script)
+chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+chrome_options.add_experimental_option("useAutomationExtension", False)
+chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+
+service = Service(CHROMEDRIVER_PATH)
+driver = webdriver.Chrome(service=service, options=chrome_options)
+
+# ===== OPEN DATASIGHT =====
+print("\n✅ Opening Datasight …")
+driver.get(TARGET_URL)
+time.sleep(2)
+
+print("\n✅ Please login manually:")
+print("   - Enter your email")
+print("   - Click Next")
+print("   - Complete SSO/MFA")
+print("\n✅ The browser will NOT close.")
+print("✅ Script will wait for you to confirm login.\n")
+
+# ===== BLOCK SCRIPT UNTIL YOU CONFIRM =====
+input("👉 After dashboard loads, PRESS ENTER here to continue… ")
+
+print("\n✅ OK — You confirmed dashboard is loaded.")
+print("✅ STEP-1 complete.\n")
+
+# ===== SURVIVAL LOOP (so browser can NEVER close) =====
+print("⏳ Keeping browser alive for next steps…")
+while True:
+    time.sleep(1)
+
+
+---
+
+✅ ✅ THIS VERSION CANNOT CLOSE, because:
+
+✅ Step 1: input()
+
+The script pauses forever until YOU press ENTER.
+So the browser stays open no matter what.
+
+✅ Step 2: infinite while True:
+
+Even after Enter is pressed, the script never ends, so Selenium cannot kill the browser.
+
+✅ This is EXACTLY how your existing working script behaves.
+✅ That’s why your other script stayed open.
+
+
+---
+
+✅ IMPORTANT
+
+Now test:
+
+1. Run the script
+
+
+2. Browser opens
+
+
+3. Enter your email manually
+
+
+4. Login with Google SSO
+
+
+5. Wait for dashboard to load
+
+
+6. Go back to the terminal and press ENTER
+
+
+
+Browser must stay open forever.
+
+
+---
+
+✅ PLEASE CONFIRM
+
+Tell me:
+
+✅ Does the browser stay open with this version?
+
+If yes, then we finally lock Step-1 and I will give you:
+
+✅ Step-2 → Click GRAS-CHG level
+✅ Step-3 → Hover + click the 3-dots
+✅ Step-4 → Export CSV (Excel)
+
+
+---
+
+✅ Reply:
+
+“Browser stays open now”
+or
+“Still closes” (send screenshot).
